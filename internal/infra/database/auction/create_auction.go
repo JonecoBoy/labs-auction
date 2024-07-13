@@ -66,7 +66,7 @@ func GetAuctionDuration() (time.Duration, error) {
 
 func StartAuctionExpirationRoutine(db *mongo.Database) {
 	go func() {
-		auctionInterval, err := time.ParseDuration(os.Getenv("AUCTION_INTERVAL"))
+		auctionInterval, err := time.ParseDuration(os.Getenv("FETCH_EXPIRED_INTERVAL"))
 		if err != nil {
 			log.Fatalf("Error parsing AUCTION_INTERVAL: %v", err)
 			return

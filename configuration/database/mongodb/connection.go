@@ -2,10 +2,11 @@ package mongodb
 
 import (
 	"context"
-	"fullcycle-auction_go/configuration/logger"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"labs-auction/configuration/logger"
 	"os"
+	"time"
 )
 
 const (
@@ -24,10 +25,13 @@ func NewMongoDBConnection(ctx context.Context) (*mongo.Database, error) {
 		return nil, err
 	}
 
-	if err := client.Ping(ctx, nil); err != nil {
+	// Create a new context with a 5 second timeout
+	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	if err := client.Ping(pingCtx, nil); err != nil {
 		logger.Error("Error trying to ping mongodb database", err)
 		return nil, err
 	}
-
 	return client.Database(mongoDatabase), nil
 }

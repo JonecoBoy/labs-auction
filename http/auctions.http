@@ -1,0 +1,28 @@
+POST http://localhost:8080/auction HTTP/1.1
+Content-Type: application/json
+
+{
+  "product_name": "Test Product",
+  "category": "Test Category",
+  "description": "This is a test product",
+  "condition": 1
+}
+
+###
+
+GET http://localhost:8080/auction/97f05659-a7df-49bc-9509-e173a4dd0e7e HTTP/1.1
+
+###
+
+GET http://localhost:8080/auction/winner/97f05659-a7df-49bc-9509-e173a4dd0e7e HTTP/1.1
+
+###
+
+POST http://localhost:8080/bid HTTP/1.1
+Content-Type: application/json
+
+{
+"user_id": "97f05659-a7df-49bc-9509-e173a4dd0e7e",
+"auction_id": "97f05659-a7df-49bc-9509-e173a4dd0e7e",
+"amount": 100
+}

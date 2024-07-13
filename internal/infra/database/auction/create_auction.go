@@ -2,9 +2,14 @@ package auction
 
 import (
 	"context"
-	"fullcycle-auction_go/configuration/logger"
-	"fullcycle-auction_go/internal/entity/auction_entity"
-	"fullcycle-auction_go/internal/internal_error"
+	"go.mongodb.org/mongo-driver/bson"
+	"labs-auction/configuration/logger"
+	"labs-auction/internal/entity/auction_entity"
+	"labs-auction/internal/internal_error"
+	"log"
+	"os"
+	"strconv"
+	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -18,6 +23,7 @@ type AuctionEntityMongo struct {
 	Status      auction_entity.AuctionStatus    `bson:"status"`
 	Timestamp   int64                           `bson:"timestamp"`
 }
+
 type AuctionRepository struct {
 	Collection *mongo.Collection
 }
@@ -47,4 +53,50 @@ func (ar *AuctionRepository) CreateAuction(
 	}
 
 	return nil
+}
+
+func GetAuctionDuration() (time.Duration, error) {
+	durationStr := os.Getenv("AUCTION_INTERVAL")
+	duration, err := strconv.Atoi(durationStr)
+	if err != nil {
+		return 0, err
+	}
+	return time.Duration(duration) * time.Minute, nil
+}
+
+func StartAuctionExpirationRoutine(db *mongo.Database) {
+	go func() {
+		auctionInterval, err := time.ParseDuration(os.Getenv("AUCTION_INTERVAL"))
+		if err != nil {
+			log.Fatalf("Error parsing AUCTION_INTERVAL: %v", err)
+			return
+		}
+		closeExpiredAuctions(db)
+		for {
+			time.Sleep(auctionInterval)
+			closeExpiredAuctions(db)
+		}
+	}()
+}
+
+func closeExpiredAuctions(db *mongo.Database) {
+	//ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx := context.Background()
+	//defer cancel()
+
+	//duration, err := GetAuctionDuration()
+	duration, err := time.ParseDuration(os.Getenv("AUCTION_EXPIRED"))
+	if err != nil {
+		log.Printf("Error getting auction duration: %v", err)
+		return
+	}
+
+	expirationTime := time.Now().Add(-duration)
+	filter := bson.M{"timestamp": bson.M{"$lt": expirationTime.Unix()}, "status": auction_entity.Active}
+	update := bson.M{"$set": bson.M{"status": auction_entity.Completed}}
+
+	_, err = db.Collection("auctions").UpdateMany(ctx, filter, update)
+	if err != nil {
+		log.Printf("Error updating expired auctions: %v", err)
+	}
 }

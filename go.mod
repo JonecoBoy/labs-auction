@@ -1,4 +1,4 @@
-module fullcycle-auction_go
+module labs-auction
 
 go 1.20
 

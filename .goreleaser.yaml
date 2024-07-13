@@ -22,6 +22,7 @@ builds:
       - linux
       - windows
       - darwin
+    main: ./cmd/auction/main.go
 
 archives:
   - format: tar.gz
